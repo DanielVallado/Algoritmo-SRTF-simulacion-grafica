@@ -3,7 +3,8 @@ package Modelo;
 public class Proceso {
     private final int id;
     private final double tiempoLlegada;
-    private final double tiempoRafaga;
+    private double tiempoRafaga;
+    private double tiempoInicio;
 
     public Proceso(int id, double tiempoLlegada, double tiempoRafaga) {
         this.id = id;
@@ -21,5 +22,17 @@ public class Proceso {
 
     public double getTiempoRafaga() {
         return tiempoRafaga;
+    }
+
+    public void setTiempoRafaga(double tiempoRafaga) {
+        this.tiempoRafaga = tiempoRafaga;
+    }
+
+    public double getTiempoInicio() {
+        return tiempoInicio;
+    }
+
+    public void setTiempoInicio(double tiempoInicio) {
+        this.tiempoInicio = tiempoInicio;
     }
 }
