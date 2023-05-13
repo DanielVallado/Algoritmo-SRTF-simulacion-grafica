@@ -5,6 +5,7 @@ public class Proceso {
     private final double tiempoLlegada;
     private double tiempoRafaga;
     private double tiempoInicio;
+    private double tiempoFinalizacion;
 
     public Proceso(int id, double tiempoLlegada, double tiempoRafaga) {
         this.id = id;
@@ -34,5 +35,18 @@ public class Proceso {
 
     public void setTiempoInicio(double tiempoInicio) {
         this.tiempoInicio = tiempoInicio;
+    }
+
+    public double getTiempoFinalizacion() {
+        return tiempoFinalizacion;
+    }
+
+    public void setTiempoFinalizacion(double tiempoFinalizacion) {
+        this.tiempoFinalizacion = tiempoFinalizacion;
+    }
+
+    @Override
+    public String toString() {
+        return "Proceso " + id ;
     }
 }

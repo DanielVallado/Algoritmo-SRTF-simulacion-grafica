@@ -6,16 +6,20 @@ import java.util.List;
 import java.util.PriorityQueue;
 
 public class SRTF {
-    public static List<Double> srtf(List<Proceso> procesos) {
-        List<Double> tiemposDeEspera = new ArrayList<>();
+    private final List<Double> tiemposDeEspera;
+    private final List<Double> tiemposFinalizacion;
+    private final PriorityQueue<Proceso> cola;
+    private Proceso procesoActual;
+
+    public SRTF() {
+        this.tiemposDeEspera = new ArrayList<>();
+        this.tiemposFinalizacion = new ArrayList<>();
+        this.procesoActual = null;
+        this.cola = new PriorityQueue<>(Comparator.comparingDouble(Proceso::getTiempoRafaga));
+    }
+
+    public List<Double> srtf(List<Proceso> procesos) {
         int tiempoActual = 0;
-        Proceso procesoActual = null;
-        PriorityQueue<Proceso> cola = new PriorityQueue<>(new Comparator<Proceso>() {
-            @Override
-            public int compare(Proceso p1, Proceso p2) {
-                return Double.compare(p1.getTiempoRafaga(), p2.getTiempoRafaga());
-            }
-        });
 
         while (!procesos.isEmpty() || procesoActual != null || !cola.isEmpty()) {
             // Agregamos los procesos que llegan al momento actual a la cola
@@ -34,6 +38,8 @@ public class SRTF {
             // Si el proceso actual ha terminado, lo eliminamos y tomamos el siguiente proceso de la cola
             if (procesoActual != null && procesoActual.getTiempoRafaga() == 0) {
                 tiemposDeEspera.add(procesoActual.getTiempoInicio() - procesoActual.getTiempoLlegada());
+                tiemposFinalizacion.add((double) tiempoActual);
+                procesoActual.setTiempoFinalizacion(tiempoActual);
                 procesoActual = null;
                 if (!cola.isEmpty()) {
                     procesoActual = cola.poll();
@@ -50,6 +56,25 @@ public class SRTF {
             tiempoActual++;
         }
 
-        return tiemposDeEspera;
+        return tiemposFinalizacion;
+    }
+
+    public void calcularTiemposDeEspera(List<Proceso> procesos) {
+        for (Proceso proceso : procesos) {
+            double tiempoEspera = proceso.getTiempoFinalizacion() - proceso.getTiempoLlegada() - proceso.getTiempoRafaga();
+            System.out.printf("Proceso %d - Tiempo de espera: %.2f%n", proceso.getId(), tiempoEspera);
+        }
+    }
+
+    public double calcularTEP() {
+        return 0;
+    }
+
+    public double calcularTTP() {
+        return 0;
+    }
+
+    public double calcularPorcentaje() {
+        return 0;
     }
 }
