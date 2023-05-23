@@ -2,79 +2,95 @@ package Modelo;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
 
 public class SRTF {
-    private final List<Double> tiemposDeEspera;
-    private final List<Double> tiemposFinalizacion;
+    
     private final PriorityQueue<Proceso> cola;
+    private final List<Proceso> listaProcesos;
     private Proceso procesoActual;
+    private int tiempoActual;
+    private final double CAMBIO_CONTEXTO = 0.2;
+    private int cantCambiosContexto;
 
-    public SRTF() {
-        this.tiemposDeEspera = new ArrayList<>();
-        this.tiemposFinalizacion = new ArrayList<>();
+    public SRTF(List<Proceso> procesos) {
+        this.listaProcesos = new ArrayList<>();
+        this.listaProcesos.addAll(procesos);
         this.procesoActual = null;
+        this.tiempoActual = 0;
         this.cola = new PriorityQueue<>(Comparator.comparingDouble(Proceso::getTiempoRafaga));
     }
 
-    public List<Double> srtf(List<Proceso> procesos) {
-        int tiempoActual = 0;
-
-        while (!procesos.isEmpty() || procesoActual != null || !cola.isEmpty()) {
-            // Agregamos los procesos que llegan al momento actual a la cola
-            while (!procesos.isEmpty() && procesos.get(0).getTiempoLlegada() == tiempoActual) {
-                cola.add(procesos.remove(0));
+    public Proceso ejecutar() {
+        Proceso proceso = null;
+        
+        if (!listaProcesos.isEmpty() || procesoActual != null || !cola.isEmpty()) {
+            while (!listaProcesos.isEmpty() && listaProcesos.get(0).getTiempoLlegada() <= tiempoActual) {
+                cola.add(listaProcesos.remove(0));
             }
 
-            // Si no hay un proceso en ejecución, tomamos el proceso más corto de la cola
-            if (procesoActual == null) {
-                if (!cola.isEmpty()) {
-                    procesoActual = cola.poll();
-                    procesoActual.setTiempoInicio(tiempoActual);
+            if (procesoActual == null || (cola.peek() != null && cola.peek().getTiempoRafaga() < procesoActual.getTiempoRafaga())) {
+                if (procesoActual != null) {
+                    cola.add(procesoActual);
                 }
-            }
-
-            // Si el proceso actual ha terminado, lo eliminamos y tomamos el siguiente proceso de la cola
-            if (procesoActual != null && procesoActual.getTiempoRafaga() == 0) {
-                tiemposDeEspera.add(procesoActual.getTiempoInicio() - procesoActual.getTiempoLlegada());
-                tiemposFinalizacion.add((double) tiempoActual);
-                procesoActual.setTiempoFinalizacion(tiempoActual);
-                procesoActual = null;
-                if (!cola.isEmpty()) {
-                    procesoActual = cola.poll();
-                    procesoActual.setTiempoInicio(tiempoActual);
+                
+                if (procesoActual != cola.peek() && tiempoActual != 0) {
+                    List<Proceso> colaProcesos = new ArrayList<>(cola);
+                    
+                    for (Proceso procesoCambio : colaProcesos) {
+                        procesoCambio.addCambioDeContexto(CAMBIO_CONTEXTO);
+                    }
+                    this.cantCambiosContexto++;
                 }
+                
+                procesoActual = cola.poll();
+                procesoActual.setTiempoInicio(tiempoActual);
             }
 
-            // Si hay un proceso en ejecución, lo ejecutamos por un ciclo de reloj
             if (procesoActual != null) {
                 procesoActual.setTiempoRafaga(procesoActual.getTiempoRafaga() - 1);
             }
+            
+            proceso = procesoActual;
+            
+            if (procesoActual != null && procesoActual.getTiempoRafaga() == 0) {
+                double tiemporFinalizacion = tiempoActual + 1;
+                procesoActual.setTiempoFinalizacion(tiemporFinalizacion);
+                
+                double tiempoEspera = procesoActual.getTiempoFinalizacion() + procesoActual.getTiempoExtra() - procesoActual.getTiempoLlegada() - procesoActual.getTiempoDuracion();
+                procesoActual.setTiempoEspera(tiempoEspera);
 
-            // Bonanzas el tiempo
+                procesoActual = null;
+            }
+            
             tiempoActual++;
         }
-
-        return tiemposFinalizacion;
+        
+        return proceso;
     }
 
-    public void calcularTiemposDeEspera(List<Proceso> procesos) {
+    public double calcularTEP(List<Proceso> procesos) {
+        double totalEspera = 0;
         for (Proceso proceso : procesos) {
-            double tiempoEspera = proceso.getTiempoFinalizacion() - proceso.getTiempoLlegada() - proceso.getTiempoRafaga();
-            System.out.printf("Proceso %d - Tiempo de espera: %.2f%n", proceso.getId(), tiempoEspera);
+            totalEspera += proceso.getTiempoEspera();
         }
+        totalEspera /= procesos.size();
+        return totalEspera;
     }
 
-    public double calcularTEP() {
-        return 0;
+    public double calcularTTP(List<Proceso> procesos) {
+        double tiempoTotal = 0;
+        for (Proceso proceso : procesos) {
+            tiempoTotal += proceso.getTiempoDuracion();
+        }
+        
+        return tiempoTotal + cantCambiosContexto * CAMBIO_CONTEXTO;
     }
-
-    public double calcularTTP() {
-        return 0;
+    
+    public double calcularPorcentaje(List<Proceso> procesos) {
+        return (this.calcularTEP(procesos) * 100) / this.calcularTTP(procesos);
     }
-
-    public double calcularPorcentaje() {
-        return 0;
-    }
+    
 }
