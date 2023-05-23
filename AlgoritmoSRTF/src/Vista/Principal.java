@@ -1,4 +1,2 @@
-package Vista;
-
-public class Principal {
+package Vista;public class Principal {
 }
